@@ -193,6 +193,19 @@
   </div>
 </div>
 
+<!-- REBLOCK TIMER OVERLAY -->
+<div class="qr-overlay" id="reblock-overlay">
+  <div class="qr-box">
+    <div class="qr-title">you're in 🕐</div>
+    <div class="qr-sub" id="reblock-msg">use your time well. re-block when this hits zero.</div>
+    <div style="font-size:52px;font-weight:500;color:var(--accent);letter-spacing:-2px;margin:1.5rem 0" id="reblock-countdown">05:00</div>
+    <div class="qr-steps">
+      <div class="qr-step"><span>when done:</span> open Foqos → scan your QR → re-blocked</div>
+    </div>
+    <button class="qr-done" onclick="closeReblock()">got it — i'll re-block after</button>
+  </div>
+</div>
+
 <!-- URGE MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
@@ -371,12 +384,42 @@ function showQR() {
 }
 function closeQR() { document.getElementById('qr-modal').classList.remove('open'); }
 function markOpened() {
-  // mark all today's urges as opened
   const today = todayStr();
   urges = urges.map(u => new Date(u.ts).toDateString() === today ? {...u, opened: true} : u);
   saveUrges();
   unlockQRMade = false;
   closeQR();
+  // clear today's urges so counter resets to 0
+  urges = urges.filter(u => new Date(u.ts).toDateString() !== today);
+  saveUrges();
+  // show 5 min reblock timer
+  showReblockTimer();
+}
+
+function showReblockTimer() {
+  document.getElementById('reblock-overlay').classList.add('open');
+  let secs = 5 * 60;
+  updateReblockDisplay(secs);
+  const interval = setInterval(() => {
+    secs--;
+    updateReblockDisplay(secs);
+    if (secs <= 0) {
+      clearInterval(interval);
+      document.getElementById('reblock-msg').textContent = "time's up. go re-block now.";
+      document.getElementById('reblock-countdown').textContent = '00:00';
+    }
+  }, 1000);
+}
+
+function updateReblockDisplay(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  document.getElementById('reblock-countdown').textContent =
+    String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function closeReblock() {
+  document.getElementById('reblock-overlay').classList.remove('open');
   updateWaitingBlock();
 }
 
