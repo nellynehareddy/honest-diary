@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>honest diary</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
     --bg: #FAF9F6;
@@ -22,22 +23,14 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
   body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-
   .app { max-width: 430px; margin: 0 auto; padding: 0 1rem 5rem; min-height: 100%; }
 
-  /* NAV */
   .nav { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; padding-top: 1.25rem; }
   .nav-btn { flex: 1; padding: 0.6rem 0; font-size: 13px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text3); cursor: pointer; margin-bottom: -1px; }
   .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
-
   .screen { display: none; }
   .screen.active { display: block; }
-
   .wordmark { font-size: 11px; letter-spacing: 0.12em; color: var(--text3); margin-bottom: 1.5rem; text-transform: uppercase; }
-
-  /* CHECKIN */
-  .urge-btn { width: 100%; padding: 1.1rem; font-size: 16px; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 1rem; }
-  .urge-btn:active { opacity: 0.85; }
 
   .nonneg-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1.25rem; }
   .nonneg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
@@ -50,16 +43,17 @@
   .nonneg-text.done { text-decoration: line-through; color: var(--text3); }
   .nonneg-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 0 4px; }
   .nonneg-empty { font-size: 13px; color: var(--text3); font-style: italic; }
-
   .add-form { display: flex; gap: 8px; margin-top: 10px; }
   .add-form input { flex: 1; font-size: 14px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); outline: none; }
   .add-form input:focus { border-color: var(--accent); }
   .add-form button { padding: 8px 14px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text2); cursor: pointer; }
 
-  /* URGE MODAL */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: flex-end; justify-content: center; }
+  .urge-btn { width: 100%; padding: 1.1rem; font-size: 16px; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 1rem; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px)); width: 100%; max-width: 430px; }
+  .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px)); width: 100%; max-width: 430px; }
   .modal-title { font-size: 18px; font-weight: 500; margin-bottom: 0.4rem; }
   .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 1.25rem; line-height: 1.6; }
   .modal textarea { width: 100%; min-height: 90px; padding: 12px; font-size: 15px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); resize: none; outline: none; line-height: 1.6; }
@@ -70,7 +64,21 @@
   .modal-log { flex: 2; padding: 12px; font-size: 14px; font-weight: 500; border: none; border-radius: var(--radius-sm); background: var(--accent); color: #fff; cursor: pointer; }
   .modal-log:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; }
 
-  /* WAITING STATE */
+  /* QR MODAL */
+  .qr-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+  .qr-overlay.open { display: flex; }
+  .qr-box { background: var(--surface); border-radius: 20px; padding: 2rem 1.5rem; width: 90%; max-width: 340px; text-align: center; }
+  .qr-title { font-size: 17px; font-weight: 500; margin-bottom: 0.4rem; }
+  .qr-sub { font-size: 13px; color: var(--text2); margin-bottom: 1.25rem; line-height: 1.6; }
+  #qr-code { display: flex; justify-content: center; margin-bottom: 1.25rem; }
+  #qr-code canvas, #qr-code img { border-radius: 8px; }
+  .qr-steps { background: var(--bg); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.25rem; text-align: left; }
+  .qr-step { font-size: 13px; color: var(--text2); padding: 4px 0; line-height: 1.5; }
+  .qr-step span { color: var(--accent); font-weight: 500; }
+  .qr-done { width: 100%; padding: 13px; font-size: 15px; font-weight: 500; border: none; border-radius: var(--radius-sm); background: var(--accent); color: #fff; cursor: pointer; margin-bottom: 0.75rem; }
+  .qr-cancel { width: 100%; padding: 11px; font-size: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text2); cursor: pointer; }
+
+  /* WAITING */
   .waiting-block { background: var(--accent-light); border: 1px solid var(--accent); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1rem; }
   .waiting-title { font-size: 13px; font-weight: 500; color: var(--accent); margin-bottom: 0.4rem; }
   .waiting-count { font-size: 28px; font-weight: 500; color: var(--accent); }
@@ -79,14 +87,12 @@
   .unlock-btn { width: 100%; padding: 1rem; font-size: 15px; font-weight: 500; background: var(--green); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 0.75rem; }
   .unlock-btn:disabled { background: var(--border); color: var(--text3); cursor: not-allowed; }
 
-  /* ENTRIES LIST in checkin */
   .today-reasons { margin-top: 1.5rem; }
   .today-header { font-size: 11px; letter-spacing: 0.08em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.75rem; }
   .reason-pill { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 6px; }
   .reason-text { font-size: 14px; color: var(--text); line-height: 1.5; }
   .reason-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
-  /* DIARY */
   .diary-day { margin-bottom: 1.75rem; }
   .diary-date { font-size: 11px; letter-spacing: 0.08em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
   .diary-entry { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
@@ -97,9 +103,6 @@
   .diary-opened.yes { background: #FDE8E8; color: var(--red); }
   .diary-opened.no { background: #E8F5EE; color: var(--green); }
 
-  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; line-height: 1.9; }
-
-  /* SUMMARY */
   .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
   .summary-label { font-size: 11px; letter-spacing: 0.08em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.5rem; }
   .summary-big { font-size: 32px; font-weight: 500; color: var(--text); }
@@ -108,10 +111,18 @@
   .summary-reason-item { font-size: 14px; color: var(--text2); padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
   .summary-reason-item:last-child { border-bottom: none; }
   .summary-reason-item::before { content: '— '; color: var(--text3); }
-
   .nonneg-summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
   .nonneg-summary-item { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 14px; color: var(--text2); }
-  .check-icon { font-size: 16px; }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; line-height: 1.9; }
+
+  /* SETUP SCREEN */
+  .setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+  .setup-label { font-size: 11px; letter-spacing: 0.08em; color: var(--text3); text-transform: uppercase; margin-bottom: 0.75rem; }
+  .setup-card input { width: 100%; font-size: 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); outline: none; margin-bottom: 0.75rem; }
+  .setup-card input:focus { border-color: var(--accent); }
+  .setup-card p { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 0.75rem; }
+  .setup-save { width: 100%; padding: 12px; font-size: 14px; font-weight: 500; border: none; border-radius: var(--radius-sm); background: var(--accent); color: #fff; cursor: pointer; }
+  .setup-status { font-size: 13px; color: var(--green); margin-top: 0.5rem; text-align: center; display: none; }
 </style>
 </head>
 <body>
@@ -120,12 +131,12 @@
     <button class="nav-btn active" id="nav-checkin" onclick="show('checkin')">check in</button>
     <button class="nav-btn" id="nav-diary" onclick="show('diary')">diary</button>
     <button class="nav-btn" id="nav-today" onclick="show('today')">today</button>
+    <button class="nav-btn" id="nav-setup" onclick="show('setup')">setup</button>
   </div>
 
-  <!-- CHECK IN SCREEN -->
+  <!-- CHECK IN -->
   <div class="screen active" id="screen-checkin">
     <p class="wordmark">honest diary</p>
-
     <div class="nonneg-block">
       <div class="nonneg-header">
         <span class="nonneg-title">today's non-negotiables</span>
@@ -137,35 +148,51 @@
         <button onclick="addNonneg()">add</button>
       </div>
     </div>
-
     <div id="waiting-block" style="display:none">
       <div class="waiting-block">
-        <div class="waiting-title">you've logged your urge</div>
+        <div class="waiting-title">you've been honest</div>
         <div class="waiting-count" id="waiting-count">0 / 10</div>
         <div class="waiting-sub">reasons logged today</div>
         <div class="waiting-next" id="waiting-next"></div>
       </div>
-      <button class="unlock-btn" id="unlock-btn" onclick="openGranted()" disabled>open foqos now</button>
+      <button class="unlock-btn" id="unlock-btn" onclick="showQR()" disabled>show me the QR code to unblock</button>
     </div>
-
     <button class="urge-btn" id="urge-btn" onclick="openModal()">i feel the urge to open something</button>
-
     <div class="today-reasons" id="today-reasons" style="display:none">
       <div class="today-header">what you've written today</div>
       <div id="today-list"></div>
     </div>
   </div>
 
-  <!-- DIARY SCREEN -->
+  <!-- DIARY -->
   <div class="screen" id="screen-diary">
     <p class="wordmark">honest diary</p>
     <div id="diary-list"></div>
   </div>
 
-  <!-- TODAY SUMMARY SCREEN -->
+  <!-- TODAY -->
   <div class="screen" id="screen-today">
     <p class="wordmark">honest diary</p>
     <div id="today-summary"></div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="screen" id="screen-setup">
+    <p class="wordmark">honest diary</p>
+    <div class="setup-card">
+      <div class="setup-label">connect foqos</div>
+      <p>open Foqos → create a profile → set it to QR code mode → inside the profile tap "show QR code" → you'll see a URL starting with <strong>foqos.app/profile/...</strong> — paste it here.</p>
+      <input type="text" id="foqos-url-input" placeholder="foqos.app/profile/your-id-here" />
+      <button class="setup-save" onclick="saveFoqosUrl()">save</button>
+      <div class="setup-status" id="setup-status">✓ saved — foqos is connected</div>
+    </div>
+    <div class="setup-card">
+      <div class="setup-label">how it works</div>
+      <p>1. set Foqos to QR code mode and block your apps.</p>
+      <p>2. when you feel an urge, tap "i feel the urge" and write why.</p>
+      <p>3. after 10 reasons (2 min apart), or when all non-negotiables are done — honest diary shows you the QR code.</p>
+      <p>4. scan it in Foqos to unblock. scan again to re-block when done.</p>
+    </div>
   </div>
 </div>
 
@@ -173,7 +200,7 @@
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <div class="modal-title">what's pulling you?</div>
-    <div class="modal-sub">write it honestly. no one's judging. this just goes in your diary.</div>
+    <div class="modal-sub">write it honestly. it goes in your diary. no judgment.</div>
     <textarea id="modal-input" placeholder="i was bored and my hand just went there... i want to check if someone replied... i'm avoiding something..." oninput="checkModalBtn()"></textarea>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">cancel</button>
@@ -182,39 +209,46 @@
   </div>
 </div>
 
+<!-- QR MODAL -->
+<div class="qr-overlay" id="qr-modal">
+  <div class="qr-box">
+    <div class="qr-title">here's your key</div>
+    <div class="qr-sub">you were honest. scan this in Foqos to unblock your apps.</div>
+    <div id="qr-code"></div>
+    <div class="qr-steps">
+      <div class="qr-step"><span>1.</span> open Foqos</div>
+      <div class="qr-step"><span>2.</span> tap your active profile</div>
+      <div class="qr-step"><span>3.</span> tap "scan QR" to stop the session</div>
+      <div class="qr-step"><span>4.</span> point camera at this code</div>
+    </div>
+    <button class="qr-done" onclick="markOpened()">done — i scanned it</button>
+    <button class="qr-cancel" onclick="closeQR()">actually i don't need it</button>
+  </div>
+</div>
+
 <script>
-// ── STATE ──────────────────────────────────────────────────────────
 let nonneg = JSON.parse(localStorage.getItem('hd_nonneg') || 'null') || [
   { id: 1, text: 'get to bed by 10:30 pm', done: false },
   { id: 2, text: 'workout at 5:15 class', done: false },
   { id: 3, text: 'cook dinner in the evening', done: false },
-  { id: 4, text: 'write if still awake and cant sleep', done: false }
+  { id: 4, text: 'write if still awake and can\'t sleep', done: false }
 ];
 let urges = JSON.parse(localStorage.getItem('hd_urges') || '[]');
+let foqosUrl = localStorage.getItem('hd_foqos_url') || '';
 let addFormOpen = false;
+let qrGenerated = false;
 
 function saveNonneg() { localStorage.setItem('hd_nonneg', JSON.stringify(nonneg)); }
 function saveUrges() { localStorage.setItem('hd_urges', JSON.stringify(urges)); }
 
-// ── DATE HELPERS ───────────────────────────────────────────────────
 function todayStr() { return new Date().toDateString(); }
 function todayUrges() { return urges.filter(u => new Date(u.ts).toDateString() === todayStr()); }
-function formatTime(ts) {
-  const d = new Date(ts);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-}
-function formatDate(ts) {
-  const d = new Date(ts);
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-}
+function formatTime(ts) { return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
+function formatDate(ts) { return new Date(ts).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
 
-// ── NON-NEGOTIABLES ────────────────────────────────────────────────
 function renderNonneg() {
   const list = document.getElementById('nonneg-list');
-  if (nonneg.length === 0) {
-    list.innerHTML = '<div class="nonneg-empty">nothing yet — add what must happen today</div>';
-    return;
-  }
+  if (nonneg.length === 0) { list.innerHTML = '<div class="nonneg-empty">add what must happen today</div>'; return; }
   list.innerHTML = nonneg.map(n => `
     <div class="nonneg-item">
       <input type="checkbox" class="nonneg-cb" ${n.done ? 'checked' : ''} onchange="toggleNonneg(${n.id})">
@@ -244,53 +278,40 @@ function addNonneg() {
   saveNonneg(); renderNonneg();
 }
 
-// ── WAITING / UNLOCK LOGIC ─────────────────────────────────────────
-function allNonnegDone() {
-  return nonneg.length > 0 && nonneg.every(n => n.done);
-}
+function allNonnegDone() { return nonneg.length > 0 && nonneg.every(n => n.done); }
 function canUnlock() {
   const tu = todayUrges();
   if (allNonnegDone()) return true;
   if (tu.length < 10) return false;
-  // check last urge was at least 2 min ago
   const last = new Date(tu[tu.length - 1].ts);
   return (Date.now() - last.getTime()) >= 2 * 60 * 1000;
 }
+
 function updateWaitingBlock() {
   const tu = todayUrges();
   const wb = document.getElementById('waiting-block');
   const ub = document.getElementById('urge-btn');
   const tr = document.getElementById('today-reasons');
-
-  if (tu.length === 0) {
-    wb.style.display = 'none';
-    ub.style.display = 'block';
-    tr.style.display = 'none';
-    return;
-  }
-
+  if (tu.length === 0) { wb.style.display = 'none'; ub.style.display = 'block'; tr.style.display = 'none'; return; }
   wb.style.display = 'block';
-  ub.style.display = tu.length >= 10 || allNonnegDone() ? 'none' : 'block';
   tr.style.display = 'block';
-
   document.getElementById('waiting-count').textContent = `${Math.min(tu.length, 10)} / 10`;
-
   const unlockBtn = document.getElementById('unlock-btn');
   const ready = canUnlock();
   unlockBtn.disabled = !ready;
-
   if (allNonnegDone()) {
-    document.getElementById('waiting-next').textContent = '✓ all non-negotiables done — you can open now';
+    document.getElementById('waiting-next').textContent = '✓ all non-negotiables done — you earned it';
     unlockBtn.disabled = false;
+    ub.style.display = 'none';
+  } else if (tu.length >= 10 && ready) {
+    document.getElementById('waiting-next').textContent = '10 reasons logged. you can unlock now.';
+    ub.style.display = 'none';
   } else if (tu.length >= 10) {
-    if (ready) {
-      document.getElementById('waiting-next').textContent = '10 reasons logged. you can open now.';
-    } else {
-      const last = new Date(tu[tu.length - 1].ts);
-      const secLeft = Math.ceil((2 * 60 * 1000 - (Date.now() - last.getTime())) / 1000);
-      document.getElementById('waiting-next').textContent = `wait ${secLeft}s more then unlock`;
-      setTimeout(updateWaitingBlock, 1000);
-    }
+    const last = new Date(tu[tu.length - 1].ts);
+    const secLeft = Math.ceil((2 * 60 * 1000 - (Date.now() - last.getTime())) / 1000);
+    document.getElementById('waiting-next').textContent = `wait ${secLeft}s then unlock`;
+    ub.style.display = 'none';
+    setTimeout(updateWaitingBlock, 1000);
   } else {
     const last = new Date(tu[tu.length - 1].ts);
     const secSince = Math.floor((Date.now() - last.getTime()) / 1000);
@@ -305,29 +326,15 @@ function updateWaitingBlock() {
       setTimeout(updateWaitingBlock, 1000);
     }
   }
-
   renderTodayList();
 }
-function openGranted() {
-  // mark last urge as "opened"
-  if (urges.length > 0) {
-    urges[urges.length - 1].opened = true;
-    saveUrges();
-  }
-  window.open('https://apps.apple.com/app/foqos/id1670270993', '_blank');
-}
 
-// ── MODAL ──────────────────────────────────────────────────────────
 function openModal() {
-  // check 2 min gap between reasons
   const tu = todayUrges();
   if (tu.length > 0) {
     const last = new Date(tu[tu.length - 1].ts);
     const secSince = Math.floor((Date.now() - last.getTime()) / 1000);
-    if (secSince < 120) {
-      alert(`wait ${120 - secSince} more seconds before logging another reason.`);
-      return;
-    }
+    if (secSince < 120) { alert(`wait ${120 - secSince} more seconds before logging another reason.`); return; }
   }
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('modal-input').focus(), 100);
@@ -338,32 +345,62 @@ function closeModal() {
   document.getElementById('modal-log-btn').disabled = true;
 }
 function checkModalBtn() {
-  const v = document.getElementById('modal-input').value.trim();
-  document.getElementById('modal-log-btn').disabled = v.length < 3;
+  document.getElementById('modal-log-btn').disabled = document.getElementById('modal-input').value.trim().length < 3;
 }
 function logUrge() {
   const reason = document.getElementById('modal-input').value.trim();
   if (!reason) return;
   urges.push({ reason, ts: new Date().toISOString(), opened: false });
-  saveUrges();
-  closeModal();
-  updateWaitingBlock();
+  saveUrges(); closeModal(); updateWaitingBlock();
 }
 
-// ── DIARY ──────────────────────────────────────────────────────────
-function renderDiary() {
-  const el = document.getElementById('diary-list');
-  if (urges.length === 0) {
-    el.innerHTML = '<div class="empty-state">your diary is empty.<br><br>every time you feel the urge<br>and write it down,<br>it lands here.</div>';
+function showQR() {
+  if (!foqosUrl) {
+    alert('go to setup tab first and paste your Foqos profile URL');
+    show('setup');
     return;
   }
-  // group by day
+  document.getElementById('qr-modal').classList.add('open');
+  if (!qrGenerated) {
+    document.getElementById('qr-code').innerHTML = '';
+    new QRCode(document.getElementById('qr-code'), {
+      text: foqosUrl.startsWith('http') ? foqosUrl : 'https://' + foqosUrl,
+      width: 200, height: 200,
+      colorDark: '#1A1A1A', colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    qrGenerated = true;
+  }
+}
+function closeQR() { document.getElementById('qr-modal').classList.remove('open'); }
+function markOpened() {
+  if (urges.length > 0) { urges[urges.length - 1].opened = true; saveUrges(); }
+  closeQR(); updateWaitingBlock();
+}
+
+function saveFoqosUrl() {
+  const val = document.getElementById('foqos-url-input').value.trim();
+  if (!val) return;
+  foqosUrl = val;
+  localStorage.setItem('hd_foqos_url', val);
+  qrGenerated = false;
+  document.getElementById('setup-status').style.display = 'block';
+}
+
+function renderTodayList() {
+  const tu = todayUrges();
+  document.getElementById('today-list').innerHTML = [...tu].reverse().map(u => `
+    <div class="reason-pill">
+      <div class="reason-text">${u.reason}</div>
+      <div class="reason-meta">${formatTime(u.ts)} · ${u.opened ? 'you opened it' : 'held back'}</div>
+    </div>`).join('');
+}
+
+function renderDiary() {
+  const el = document.getElementById('diary-list');
+  if (urges.length === 0) { el.innerHTML = '<div class="empty-state">your diary is empty.<br><br>every urge you write down<br>lands here.<br><br>it adds up.</div>'; return; }
   const byDay = {};
-  [...urges].reverse().forEach(u => {
-    const d = new Date(u.ts).toDateString();
-    if (!byDay[d]) byDay[d] = [];
-    byDay[d].push(u);
-  });
+  [...urges].reverse().forEach(u => { const d = new Date(u.ts).toDateString(); if (!byDay[d]) byDay[d] = []; byDay[d].push(u); });
   el.innerHTML = Object.entries(byDay).map(([day, entries]) => `
     <div class="diary-day">
       <div class="diary-date">${formatDate(entries[0].ts)}</div>
@@ -378,59 +415,42 @@ function renderDiary() {
     </div>`).join('');
 }
 
-// ── TODAY LIST ─────────────────────────────────────────────────────
-function renderTodayList() {
-  const list = document.getElementById('today-list');
-  const tu = todayUrges();
-  list.innerHTML = [...tu].reverse().map(u => `
-    <div class="reason-pill">
-      <div class="reason-text">${u.reason}</div>
-      <div class="reason-meta">${formatTime(u.ts)} · ${u.opened ? 'you opened it' : 'held back'}</div>
-    </div>`).join('');
-}
-
-// ── TODAY SUMMARY ──────────────────────────────────────────────────
 function renderTodaySummary() {
-  const el = document.getElementById('today-summary');
   const tu = todayUrges();
   const opened = tu.filter(u => u.opened).length;
   const heldBack = tu.length - opened;
-  const allDone = allNonnegDone();
-
-  el.innerHTML = `
+  document.getElementById('today-summary').innerHTML = `
     <div class="summary-card">
       <div class="summary-label">today</div>
       <div class="summary-big">${tu.length} urge${tu.length !== 1 ? 's' : ''}</div>
-      <div class="summary-sub">${opened} time${opened !== 1 ? 's' : ''} you opened it &nbsp;·&nbsp; ${heldBack} time${heldBack !== 1 ? 's' : ''} you held back</div>
+      <div class="summary-sub">${opened} time${opened !== 1 ? 's' : ''} you opened · ${heldBack} time${heldBack !== 1 ? 's' : ''} you held back</div>
       ${tu.length > 0 ? `<div class="summary-reasons">${tu.map(u => `<div class="summary-reason-item">${u.reason}</div>`).join('')}</div>` : ''}
     </div>
     <div class="nonneg-summary">
       <div class="summary-label" style="margin-bottom:0.75rem">non-negotiables</div>
-      ${nonneg.length === 0 
-        ? '<div style="font-size:13px;color:var(--text3)">none set today</div>'
-        : nonneg.map(n => `
-          <div class="nonneg-summary-item">
-            <span class="check-icon">${n.done ? '✓' : '○'}</span>
-            <span style="color:${n.done ? 'var(--green)' : 'var(--text2)'}">${n.text}</span>
-          </div>`).join('')}
+      ${nonneg.length === 0
+        ? '<div style="font-size:13px;color:var(--text3)">none set</div>'
+        : nonneg.map(n => `<div class="nonneg-summary-item"><span>${n.done ? '✓' : '○'}</span><span style="color:${n.done ? 'var(--green)' : 'var(--text2)'}">${n.text}</span></div>`).join('')}
     </div>`;
 }
 
-// ── NAVIGATION ─────────────────────────────────────────────────────
 function show(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
-  ['checkin','diary','today'].forEach(n => document.getElementById('nav-' + n).classList.remove('active'));
+  ['checkin','diary','today','setup'].forEach(n => document.getElementById('nav-' + n).classList.remove('active'));
   document.getElementById('nav-' + name).classList.add('active');
   if (name === 'checkin') { renderNonneg(); updateWaitingBlock(); }
   if (name === 'diary') renderDiary();
   if (name === 'today') renderTodaySummary();
+  if (name === 'setup') {
+    if (foqosUrl) document.getElementById('foqos-url-input').value = foqosUrl;
+    if (foqosUrl) document.getElementById('setup-status').style.display = 'block';
+  }
 }
 
-// ── INIT ───────────────────────────────────────────────────────────
 renderNonneg();
 updateWaitingBlock();
 </script>
 </body>
 </html>
-HTMLEOF
+
