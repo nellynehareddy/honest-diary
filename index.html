@@ -184,6 +184,8 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
       <div id="setup-after" style="display:none">
         <p class="after-msg">✓ your key is hidden.</p>
         <p>the only way to unlock your apps is through 10 honest reasons. there is no shortcut.</p>
+        <p style="margin-top:1.5rem;font-size:12px;color:var(--text3)">set up a new device or lost your Foqos session?</p>
+        <button onclick="resetKey()" style="width:100%;padding:10px;font-size:13px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--text3);cursor:pointer;margin-top:6px">reset and generate new key</button>
       </div>
     </div>
     <div class="setup-card">
@@ -408,6 +410,19 @@ function generateKey(){
   document.getElementById('key-status').style.display='block';
   document.getElementById('gen-btn').style.display='none';
   document.getElementById('hide-btn').style.display='block';
+}
+function resetKey(){
+  if(!confirm('this will delete your current key. you will need to set up Foqos again with a new key. continue?')) return;
+  localStorage.removeItem('hd_key');
+  localStorage.removeItem('hd_key_hidden');
+  myKey=''; keyHidden=false;
+  document.getElementById('setup-before').style.display='block';
+  document.getElementById('setup-after').style.display='none';
+  document.getElementById('gen-btn').style.display='block';
+  document.getElementById('hide-btn').style.display='none';
+  document.getElementById('key-status').style.display='none';
+  document.getElementById('setup-qr').style.display='none';
+  document.getElementById('setup-qr').innerHTML='';
 }
 function hideKey(){
   keyHidden=true;
