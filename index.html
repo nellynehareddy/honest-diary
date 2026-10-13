@@ -172,7 +172,7 @@
     <div class="setup-card">
       <div class="setup-label">your key</div>
       <p>tap below to generate your unique QR code. this is the only key that unlocks your blocked apps in Foqos. it lives here and nowhere else.</p>
-      <button class="gen-btn" onclick="generateKey()">generate my key</button>
+      <button class="gen-btn" id="gen-btn" onclick="generateKey()">generate my key</button>
       <div id="setup-qr"></div>
       <div class="key-display" id="key-display"></div>
       <div class="key-status" id="key-status">✓ your key is ready — scan it in Foqos to start blocking</div>
@@ -235,12 +235,19 @@ function todayUrges() { return urges.filter(u => new Date(u.ts).toDateString() =
 function formatTime(ts) { return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
 function formatDate(ts) { return new Date(ts).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
 
-// generate a unique key once and store it
+// generate a unique key ONCE — never changes after first generation
 function generateKey() {
-  if (!myKey) {
-    myKey = 'honest-diary-key-' + Math.random().toString(36).substr(2, 16) + '-' + Date.now();
-    localStorage.setItem('hd_key', myKey);
+  if (myKey) {
+    // key already exists — just show it, never regenerate
+    showSetupQR();
+    return;
   }
+  myKey = 'honest-diary-key-' + Math.random().toString(36).substr(2, 16) + '-' + Date.now();
+  localStorage.setItem('hd_key', myKey);
+  showSetupQR();
+}
+
+function showSetupQR() {
   const qrEl = document.getElementById('setup-qr');
   qrEl.innerHTML = '';
   qrEl.style.display = 'flex';
@@ -248,6 +255,7 @@ function generateKey() {
   document.getElementById('key-display').style.display = 'block';
   document.getElementById('key-display').textContent = myKey;
   document.getElementById('key-status').style.display = 'block';
+  document.getElementById('gen-btn').textContent = 'show my key again';
   unlockQRMade = false;
 }
 
@@ -349,8 +357,13 @@ function showQR() {
 }
 function closeQR() { document.getElementById('qr-modal').classList.remove('open'); }
 function markOpened() {
-  if (urges.length > 0) { urges[urges.length-1].opened = true; saveUrges(); }
-  closeQR(); updateWaitingBlock();
+  // mark all today's urges as opened
+  const today = todayStr();
+  urges = urges.map(u => new Date(u.ts).toDateString() === today ? {...u, opened: true} : u);
+  saveUrges();
+  unlockQRMade = false;
+  closeQR();
+  updateWaitingBlock();
 }
 
 function renderTodayList() {
@@ -407,6 +420,7 @@ function show(name) {
   if (name === 'today') renderTodaySummary();
   if (name === 'setup' && myKey) {
     document.getElementById('key-status').style.display = 'block';
+    document.getElementById('gen-btn').textContent = 'show my key again';
   }
 }
 
@@ -415,5 +429,4 @@ updateWaitingBlock();
 </script>
 </body>
 </html>
-
 
