@@ -393,7 +393,7 @@ function renderTodaySummary() {
     <div class="nonneg-summary">
       <div class="summary-label" style="margin-bottom:0.75rem">non-negotiables</div>
       ${nonneg.length === 0 ? '<div style="font-size:13px;color:var(--text3)">none set</div>'
-        : nonneg.map(n => `<div class="nonneg-summary-item"><span>${n.done ? '✓' : '○'}</span><span style="color:${n.done ? 'var(--green)' : 'var(--text2)';margin-left:4px}">${n.text}</span></div>`).join('')}
+        : nonneg.map(n => `<div class="nonneg-summary-item"><span>${n.done ? '✓' : '○'}</span><span style="margin-left:4px;color:${n.done ? 'var(--green)' : 'var(--text2)'}">${n.text}</span></div>`).join('')}
     </div>`;
 }
 
@@ -415,4 +415,5 @@ updateWaitingBlock();
 </script>
 </body>
 </html>
+
 
