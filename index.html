@@ -171,11 +171,18 @@
     <p class="wordmark">honest diary</p>
     <div class="setup-card">
       <div class="setup-label">your key</div>
-      <p>tap below to generate your unique QR code. this is the only key that unlocks your blocked apps in Foqos. it lives here and nowhere else.</p>
-      <button class="gen-btn" id="gen-btn" onclick="generateKey()">generate my key</button>
-      <div id="setup-qr"></div>
-      <div class="key-display" id="key-display"></div>
-      <div class="key-status" id="key-status">✓ your key is ready — scan it in Foqos to start blocking</div>
+      <div id="setup-before-scan">
+        <p>tap below to generate your unique QR code. scan it into Foqos once to start blocking. after that, the only way to see this code again is through 10 honest reasons.</p>
+        <button class="gen-btn" id="gen-btn" onclick="generateKey()">generate my key</button>
+        <div id="setup-qr"></div>
+        <div class="key-display" id="key-display"></div>
+        <div class="key-status" id="key-status">✓ your key is ready — scan it in Foqos to start blocking</div>
+        <button class="gen-btn" id="scanned-btn" onclick="confirmScanned()" style="display:none;background:var(--green);margin-top:0.75rem">i scanned it into Foqos — hide this forever</button>
+      </div>
+      <div id="setup-after-scan" style="display:none">
+        <p style="color:var(--green);font-weight:500">✓ your key is set up and hidden.</p>
+        <p>the only way to unlock your apps is through 10 honest reasons on the check in tab. there is no shortcut.</p>
+      </div>
     </div>
     <div class="setup-card">
       <div class="setup-label">how to use</div>
@@ -255,8 +262,15 @@ function showSetupQR() {
   document.getElementById('key-display').style.display = 'block';
   document.getElementById('key-display').textContent = myKey;
   document.getElementById('key-status').style.display = 'block';
-  document.getElementById('gen-btn').textContent = 'show my key again';
+  document.getElementById('gen-btn').style.display = 'none';
+  document.getElementById('scanned-btn').style.display = 'block';
   unlockQRMade = false;
+}
+
+function confirmScanned() {
+  localStorage.setItem('hd_key_hidden', 'true');
+  document.getElementById('setup-before-scan').style.display = 'none';
+  document.getElementById('setup-after-scan').style.display = 'block';
 }
 
 function renderNonneg() {
@@ -289,7 +303,7 @@ function canUnlock() {
   const tu = todayUrges();
   if (allNonnegDone()) return true;
   if (tu.length < 10) return false;
-  return (Date.now() - new Date(tu[tu.length-1].ts).getTime()) >= 2 * 60 * 1000;
+  return (Date.now() - new Date(tu[tu.length-1].ts).getTime()) >= 10 * 1000;
 }
 
 function updateWaitingBlock() {
@@ -310,17 +324,17 @@ function updateWaitingBlock() {
     document.getElementById('waiting-next').textContent = '10 reasons logged. you can unlock now.';
     ub.style.display = 'none';
   } else if (tu.length >= 10) {
-    const secLeft = Math.ceil((120000 - (Date.now() - new Date(tu[tu.length-1].ts).getTime())) / 1000);
+    const secLeft = Math.ceil((10000 - (Date.now() - new Date(tu[tu.length-1].ts).getTime())) / 1000);
     document.getElementById('waiting-next').textContent = `wait ${secLeft}s then unlock`;
     ub.style.display = 'none';
     setTimeout(updateWaitingBlock, 1000);
   } else {
     const secSince = Math.floor((Date.now() - new Date(tu[tu.length-1].ts).getTime()) / 1000);
-    if (secSince >= 120) {
+    if (secSince >= 10) {
       document.getElementById('waiting-next').textContent = `ready for reason ${tu.length + 1} of 10`;
       ub.style.display = 'block';
     } else {
-      document.getElementById('waiting-next').textContent = `next reason in ${120 - secSince}s`;
+      document.getElementById('waiting-next').textContent = `next reason in ${10 - secSince}s`;
       ub.style.display = 'none';
       setTimeout(updateWaitingBlock, 1000);
     }
@@ -332,7 +346,7 @@ function openModal() {
   const tu = todayUrges();
   if (tu.length > 0) {
     const secSince = Math.floor((Date.now() - new Date(tu[tu.length-1].ts).getTime()) / 1000);
-    if (secSince < 120) { alert(`wait ${120 - secSince} more seconds before logging another reason.`); return; }
+    if (secSince < 10) { alert(`wait ${10 - secSince} more seconds before logging another reason.`); return; }
   }
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('modal-input').focus(), 100);
@@ -418,9 +432,16 @@ function show(name) {
   if (name === 'checkin') { renderNonneg(); updateWaitingBlock(); }
   if (name === 'diary') renderDiary();
   if (name === 'today') renderTodaySummary();
-  if (name === 'setup' && myKey) {
-    document.getElementById('key-status').style.display = 'block';
-    document.getElementById('gen-btn').textContent = 'show my key again';
+  if (name === 'setup') {
+    const hidden = localStorage.getItem('hd_key_hidden') === 'true';
+    if (hidden) {
+      document.getElementById('setup-before-scan').style.display = 'none';
+      document.getElementById('setup-after-scan').style.display = 'block';
+    } else if (myKey) {
+      document.getElementById('key-status').style.display = 'block';
+      document.getElementById('gen-btn').style.display = 'none';
+      document.getElementById('scanned-btn').style.display = 'block';
+    }
   }
 }
 
@@ -429,4 +450,3 @@ updateWaitingBlock();
 </script>
 </body>
 </html>
-
